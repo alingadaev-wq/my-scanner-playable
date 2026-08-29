@@ -344,7 +344,15 @@ function initAudio(){ if(started) return; try{ actx=new (window.AudioContext||wi
   if(actx.resume) actx.resume().catch(()=>{});
   master=actx.createGain(); master.connect(actx.destination);
   master.gain.setValueAtTime(0.0001,actx.currentTime); master.gain.exponentialRampToValueAtTime(0.5,actx.currentTime+0.05); }
-function unlock(){ if(!started) initAudio(); else if(actx&&actx.state==='suspended') actx.resume().catch(()=>{}); }
+let videoUnmutedByGesture=false;
+function unlock(){ if(!started) initAudio(); else if(actx&&actx.state==='suspended') actx.resume().catch(()=>{});
+  /* Mobile browsers block unmuted autoplay outright, but unmuting an already-playing video
+     from within a real user-gesture handler (any tap counts) always works. This is the
+     reliable way to get the hook video's sound, not the autoplay attempt itself. */
+  if(!videoUnmutedByGesture && soundOn){ videoUnmutedByGesture=true;
+    try{ const hv=document.getElementById('hookVideo'); if(hv && hv.muted){ hv.muted=false; hv.volume=1; } }catch(e){}
+  }
+}
 ['pointerdown','touchstart','touchend','click','keydown'].forEach(ev=>window.addEventListener(ev,unlock,{passive:true}));
 function tone(f0,f1,t,dur,type,vol){ if(!OK())return; const o=actx.createOscillator(),g=actx.createGain();
   o.type=type||'sine'; o.frequency.setValueAtTime(f0,t); o.frequency.exponentialRampToValueAtTime(Math.max(1,f1),t+dur*0.9);
@@ -392,12 +400,12 @@ hookVideo.addEventListener('ended', afterHook);
 hookVideo.addEventListener('error', afterHook);
 T(afterHook, 15500); // safety net if the video never fires 'ended' (e.g. blocked autoplay)
 
-/* Try to autoplay WITH sound first (many ad SDK webviews allow this since the interstitial
-   itself was opened by a user tap). If the browser blocks unmuted autoplay, fall back to
-   muted so playback never fails outright, and reflect that in the mute button. */
+/* Try to autoplay WITH sound first (some ad SDK webviews allow this). Most mobile browsers
+   will block it and this falls back to muted playback — soundOn stays true (the user hasn't
+   muted anything), so unlock()'s first-tap handler picks it up and unmutes automatically. */
 hookVideo.muted = false; hookVideo.volume = 1;
 hookVideo.play().catch(()=>{
-  hookVideo.muted = true; soundOn = false; $('muteBtn').textContent='🔇';
+  hookVideo.muted = true;
   hookVideo.play().catch(afterHook);
 });
 hookVideoBg.play().catch(()=>{});
