@@ -178,8 +178,8 @@
     <div id="intro">
       <div class="iscene on" id="sc1">
         <div id="introIcon"></div>
-        <div id="introH"><em>My Scanner</em> turns paper into a clean PDF — instantly</div>
-        <div id="introSub">Point, tap, done. Try scanning a document yourself.</div>
+        <div id="introH">Still scanning documents with a <em>laptop</em>? 😅</div>
+        <div id="introSub">My Scanner: point, tap, get a clean PDF.</div>
         <div id="introDemo">
           <img id="introImgBefore" class="imgshow" src="" alt="">
           <img id="introImgAfter" src="" alt="">
@@ -328,12 +328,16 @@ $('docImgBefore').src = DOC_BEFORE_IMG; $('docImgAfter').src = DOC_AFTER_IMG;
 $('introImgBefore').src = DOC_BEFORE_IMG; $('introImgAfter').src = DOC_AFTER_IMG;
 T(()=>$('introIcon').classList.add('in'),150);
 T(()=>$('introH').classList.add('in'),350);
-T(()=>$('introSub').classList.add('in'),650);
-T(()=>$('introDemo').classList.add('in'),950);
-T(()=>{ $('introDemo').classList.add('scan'); sfxTick(); },1300);
-T(()=>{ $('introDemo').classList.remove('scan'); $('introImgBefore').classList.remove('imgshow'); $('introImgAfter').classList.add('imgshow'); $('introTag').classList.add('show'); sfxWin(); },2150);
-T(()=>$('startBtn').classList.add('show'),2700);
-T(dismissIntro,6900);
+/* pattern-interrupt hook, same technique as the reference clip's "still using your laptop
+   for this?!" opener — just delivered as text/animation instead of reusing someone's face. */
+T(()=>{ const h=$('introH'); h.classList.remove('in'); void h.offsetWidth;
+  h.innerHTML='Your phone does it — <em>instantly</em> 🤯'; h.classList.add('in'); sfxTick(); },1600);
+T(()=>$('introSub').classList.add('in'),2000);
+T(()=>$('introDemo').classList.add('in'),2300);
+T(()=>{ $('introDemo').classList.add('scan'); sfxTick(); },2650);
+T(()=>{ $('introDemo').classList.remove('scan'); $('introImgBefore').classList.remove('imgshow'); $('introImgAfter').classList.add('imgshow'); $('introTag').classList.add('show'); sfxWin(); },3500);
+T(()=>$('startBtn').classList.add('show'),4050);
+T(dismissIntro,8200);
 </script>
 </body>
 </html>
