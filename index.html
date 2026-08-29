@@ -371,9 +371,9 @@ $('docImgBefore').src = DOC_BEFORE_IMG; $('docImgAfter').src = DOC_AFTER_IMG;
 $('introImgBefore').src = DOC_BEFORE_IMG; $('introImgAfter').src = DOC_AFTER_IMG;
 $('iBrand').classList.add('show');
 
-/* Hook video (muted autoplay, burned-in captions carry the message) plays first, then the
-   ad hands off to the interactive demo. A safety timer covers webviews where video autoplay
-   is blocked or the file fails to load, so the ad never gets stuck on a frozen video. */
+/* Hook video plays first (burned-in captions carry the message either way), then the ad
+   hands off to the interactive demo. A safety timer covers webviews where video autoplay is
+   blocked or the file fails to load, so the ad never gets stuck on a frozen video. */
 const hookVideo = $('hookVideo'), hookVideoBg = $('hookVideoBg');
 hookVideo.src = HOOK_VIDEO_SRC;
 hookVideoBg.src = HOOK_VIDEO_SRC;
@@ -391,7 +391,15 @@ function afterHook(){ if(handedOff) return; handedOff=true;
 hookVideo.addEventListener('ended', afterHook);
 hookVideo.addEventListener('error', afterHook);
 T(afterHook, 15500); // safety net if the video never fires 'ended' (e.g. blocked autoplay)
-hookVideo.play().catch(afterHook);
+
+/* Try to autoplay WITH sound first (many ad SDK webviews allow this since the interstitial
+   itself was opened by a user tap). If the browser blocks unmuted autoplay, fall back to
+   muted so playback never fails outright, and reflect that in the mute button. */
+hookVideo.muted = false; hookVideo.volume = 1;
+hookVideo.play().catch(()=>{
+  hookVideo.muted = true; soundOn = false; $('muteBtn').textContent='🔇';
+  hookVideo.play().catch(afterHook);
+});
 hookVideoBg.play().catch(()=>{});
 </script>
 </body>
