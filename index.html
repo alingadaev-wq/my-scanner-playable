@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>My Scanner - Playable Ad (Mintegral)</title>
+<!-- Mintegral playable: fully self-contained, MRAID-based. No external resources required. -->
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+  html,body{width:100%;height:100%;overflow:hidden;background:#080b10;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;touch-action:none;overscroll-behavior:none}
+
+  #stage{position:relative;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;
+    background:radial-gradient(120% 80% at 50% -10%,rgba(47,126,255,.18) 0%,rgba(47,126,255,0) 55%),linear-gradient(160deg,#0d1420 0%,#080b10 60%)}
+  .glowblob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.3;animation:drift 11s ease-in-out infinite}
+  .g1{width:280px;height:280px;background:#2F7EFF;top:-90px;right:-80px}
+  .g2{width:220px;height:220px;background:#22C55E;bottom:-70px;left:-70px;animation-delay:-4s}
+  @keyframes drift{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-22px) scale(1.07)}}
+
+  .phone{position:relative;width:100%;height:100%;background:#080b10;overflow:hidden;z-index:2}
+  .screen{position:absolute;inset:0;overflow:hidden}
+  @media (min-width:560px){
+    .phone{width:min(80vw,300px);aspect-ratio:9/19.5;border-radius:44px;
+      box-shadow:0 0 0 11px #10151f,0 0 0 13px #1b2230,0 40px 80px rgba(0,0,0,.65)}
+    .screen{border-radius:34px}
+  }
+
+  .topbar{position:absolute;top:0;left:0;right:0;z-index:20;padding:16px 18px 0;display:flex;align-items:center;justify-content:space-between;opacity:0;transition:opacity .3s}
+  .topbar.show{opacity:1}
+  .brand{display:flex;align-items:center;gap:7px;color:#8FB4FF;font-size:12px;font-weight:900;letter-spacing:.2px}
+  .brand svg{width:16px;height:16px;flex:0 0 auto}
+  .chip{background:rgba(47,126,255,.12);border:1px solid rgba(47,126,255,.3);border-radius:20px;padding:4px 10px;color:#8FB4FF;font-size:9.5px;font-weight:800}
+
+  /* ---------- INTRO ---------- */
+  #intro{position:absolute;inset:0;z-index:40;overflow:hidden;background:#080b10;transition:opacity .5s}
+  #intro.gone{opacity:0;pointer-events:none}
+  .iscene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity .4s;padding:0 26px;text-align:center}
+  .iscene.on{opacity:1}
+  #introIcon{width:64px;height:64px;border-radius:18px;margin-bottom:16px;box-shadow:0 14px 30px rgba(47,126,255,.3);position:relative;overflow:hidden;transform:scale(.6);opacity:0}
+  #introIcon.in{animation:iconpop .5s cubic-bezier(.2,1.5,.4,1) forwards}
+  @keyframes iconpop{to{opacity:1;transform:scale(1)}}
+  #introH{color:#fff;font-size:clamp(20px,6vw,25px);font-weight:900;line-height:1.28;opacity:0;transform:translateY(10px)}
+  #introH.in{animation:textup .45s forwards}
+  @keyframes textup{to{opacity:1;transform:translateY(0)}}
+  #introH em{color:#5B9CFF;font-style:normal}
+  #introSub{color:#9AA7B8;font-size:12.5px;font-weight:700;margin-top:9px;opacity:0}
+  #introSub.in{animation:textup .45s .1s forwards}
+
+  /* mini scan demo inside the intro — proves the mechanic before the trial even starts */
+  #introDemo{position:relative;width:108px;height:138px;margin-top:18px;border-radius:10px;overflow:hidden;
+    box-shadow:0 14px 30px rgba(0,0,0,.5);opacity:0;transform:scale(.85);flex:0 0 auto}
+  #introDemo.in{animation:demoin .4s cubic-bezier(.2,1.5,.4,1) forwards}
+  @keyframes demoin{to{opacity:1;transform:scale(1)}}
+  .mdpaper{position:absolute;inset:0;background:#EDEAE2;transform:rotate(-3deg) scale(1.08);transition:transform .5s cubic-bezier(.2,1,.4,1),background .3s;
+    box-shadow:0 6px 16px rgba(0,0,0,.35)}
+  #introDemo.done .mdpaper{transform:rotate(0deg) scale(1);background:#fff}
+  .mdline{position:absolute;left:14%;height:3px;background:#B9B4A6;border-radius:2px;transition:background .3s}
+  #introDemo.done .mdline{background:#C7CAD1}
+  #introDemo .md-scan{position:absolute;left:0;right:0;height:3px;top:0;opacity:0;
+    background:linear-gradient(90deg,rgba(34,197,94,0),#22C55E,rgba(34,197,94,0));box-shadow:0 0 8px 2px rgba(34,197,94,.7)}
+  #introDemo.scan .md-scan{opacity:1;animation:mdsweep .7s linear forwards}
+  @keyframes mdsweep{0%{top:0}100%{top:100%}}
+  #introTag{position:absolute;left:50%;bottom:-14px;transform:translate(-50%,6px);white-space:nowrap;
+    background:#0d1420;border:1px solid rgba(34,197,94,.5);color:#22C55E;font-size:12px;font-weight:900;
+    padding:4px 11px;border-radius:14px;opacity:0;transition:opacity .3s,transform .3s;box-shadow:0 6px 14px rgba(0,0,0,.4)}
+  #introTag.show{opacity:1;transform:translate(-50%,0)}
+
+  .startbtn{position:absolute;left:50%;bottom:56px;transform:translateX(-50%);border:none;cursor:pointer;
+    background:linear-gradient(90deg,#2F7EFF,#5B9CFF);color:#fff;font-size:16px;font-weight:900;
+    padding:14px 32px;border-radius:40px;box-shadow:0 10px 26px rgba(47,126,255,.45);opacity:0;pointer-events:none;white-space:nowrap}
+  .startbtn.show{opacity:1;pointer-events:auto;animation:btnpulse 1.4s infinite}
+  @keyframes btnpulse{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.06)}}
+  .skip{position:absolute;bottom:13px;right:12px;z-index:42;background:rgba(13,20,32,.7);color:#fff;font-size:11px;font-weight:800;border:none;padding:5px 12px;border-radius:20px;cursor:pointer}
+  .mute{position:absolute;bottom:12px;left:12px;z-index:42;width:28px;height:28px;border:none;border-radius:50%;background:rgba(13,20,32,.7);color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .hide{opacity:0!important;pointer-events:none;transition:opacity .4s}
+
+  /* ---------- TRIAL (the interactive scan) ---------- */
+  .trialwrap{position:absolute;inset:0;z-index:10;display:none;flex-direction:column;align-items:center;padding:60px 20px 22px}
+  .trialwrap.on{display:flex}
+  .tlabel{color:#5B9CFF;font-size:10.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase}
+  .ttitle{color:#fff;font-size:16.5px;font-weight:900;text-align:center;line-height:1.3;margin-top:6px;padding:0 6px}
+
+  .docwrap{position:relative;width:min(56vw,208px);aspect-ratio:3/4;margin-top:18px;flex:0 0 auto;cursor:pointer}
+  .docpaper{position:absolute;inset:0;background:#EDEAE2;border-radius:6px;box-shadow:0 20px 44px rgba(0,0,0,.55);
+    transform:rotate(-4deg) scale(.94);transition:transform .55s cubic-bezier(.2,1,.4,1),background .35s,box-shadow .35s;
+    padding:9% 10%;overflow:hidden}
+  .docwrap.scanned .docpaper{transform:rotate(0) scale(1);background:#fff;box-shadow:0 22px 50px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.06)}
+  .dline{height:3.5px;background:#B9B4A6;border-radius:2px;margin-top:11%;transition:background .35s}
+  .dline:first-child{margin-top:0}
+  .dline.title{height:6px;width:64%;background:#8f8a7c;margin-top:0}
+  .docwrap.scanned .dline{background:#D7DAE0}
+  .docwrap.scanned .dline.title{background:#2F7EFF}
+  .docwrap.scanned .dline.sig{background:none;position:relative}
+  .sigmark{position:absolute;left:0;bottom:6%;width:46%;height:16px;opacity:0}
+  .docwrap.scanned .sigmark{opacity:1;transition:opacity .3s .3s}
+  .sigmark svg{width:100%;height:100%}
+
+  .scanline2{position:absolute;left:0;right:0;height:4px;top:0;opacity:0;border-radius:2px;
+    background:linear-gradient(90deg,rgba(34,197,94,0),#22C55E,rgba(34,197,94,0));box-shadow:0 0 12px 3px rgba(34,197,94,.75)}
+  .docwrap.scanning .scanline2{opacity:1;animation:docsweep .85s linear forwards}
+  @keyframes docsweep{0%{top:0}100%{top:100%}}
+  .cornermark{position:absolute;width:20px;height:20px;border:3px solid #22C55E;opacity:0;transition:opacity .2s}
+  .docwrap.scanning .cornermark,.docwrap.scanned .cornermark{opacity:.95}
+  .cm-tl{top:-6px;left:-6px;border-right:none;border-bottom:none;border-radius:6px 0 0 0}
+  .cm-tr{top:-6px;right:-6px;border-left:none;border-bottom:none;border-radius:0 6px 0 0}
+  .cm-bl{bottom:-6px;left:-6px;border-right:none;border-top:none;border-radius:0 0 0 6px}
+  .cm-br{bottom:-6px;right:-6px;border-left:none;border-top:none;border-radius:0 0 6px 0}
+
+  .checkburst{position:absolute;left:50%;top:50%;width:52px;height:52px;transform:translate(-50%,-50%) scale(.3);
+    border-radius:50%;background:#22C55E;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;z-index:20}
+  .checkburst.go{animation:checkpop .6s cubic-bezier(.2,1.6,.4,1) forwards}
+  @keyframes checkpop{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}55%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}100%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+  .checkburst svg{width:26px;height:26px}
+
+  .exportrow{display:flex;gap:12px;margin-top:22px;opacity:0;transition:opacity .3s,transform .3s;transform:translateY(8px)}
+  .exportrow.show{opacity:1;transform:translateY(0)}
+  .expbadge{display:flex;flex-direction:column;align-items:center;gap:5px}
+  .expicon{width:42px;height:52px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;box-shadow:0 8px 18px rgba(0,0,0,.4)}
+  .expicon.pdf{background:linear-gradient(160deg,#FF5C5C,#C62828)}
+  .expicon.doc{background:linear-gradient(160deg,#5B9CFF,#2F5FD6)}
+  .expbadge span{color:#9AA7B8;font-size:9.5px;font-weight:800}
+
+  .thint{color:#9AA7B8;font-size:12.5px;font-weight:800;margin-top:16px;opacity:1;transition:opacity .3s}
+  .thint.hide{opacity:0}
+
+  .hand{position:absolute;width:34px;z-index:28;pointer-events:none;opacity:0;
+    transition:opacity .25s,left .4s cubic-bezier(.4,0,.2,1),top .4s cubic-bezier(.4,0,.2,1);
+    filter:drop-shadow(0 4px 7px rgba(0,0,0,.6));animation:handbob 1.05s ease-in-out infinite}
+  .hand.show{opacity:1}
+  @keyframes handbob{0%,100%{transform:translate(-26%,0)}50%{transform:translate(-26%,-9px)}}
+
+  /* ---------- END / CTA ---------- */
+  .endcard{position:absolute;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:24px;background:radial-gradient(120% 90% at 50% 10%,#122140 0%,#0d1420 50%,#080b10 100%);
+    opacity:0;pointer-events:none;transition:opacity .5s}
+  .endcard.show{opacity:1;pointer-events:auto}
+  .endicon{width:72px;height:72px;border-radius:18px;margin-bottom:14px;box-shadow:0 16px 34px rgba(47,126,255,.35);animation:pop .55s cubic-bezier(.2,1.5,.4,1)}
+  @keyframes pop{0%{transform:scale(0)}100%{transform:scale(1)}}
+  .endcard h2{color:#fff;font-size:21px;font-weight:900;line-height:1.2}
+  .endcard h2 span{color:#5B9CFF}
+  .endcard p{color:#9AA7B8;font-size:12.5px;font-weight:600;margin-top:9px;max-width:270px;line-height:1.55}
+  .featrow{display:flex;gap:8px;margin-top:13px;flex-wrap:wrap;justify-content:center;max-width:290px}
+  .featrow span{background:rgba(47,126,255,.1);border:1px solid rgba(47,126,255,.25);border-radius:20px;padding:5px 11px;color:#8FB4FF;font-size:10px;font-weight:800}
+  .stars{color:#5B9CFF;font-size:16px;margin-top:12px;letter-spacing:2px}
+  .stars b{color:#fff;font-size:12px;margin-inline-start:6px}
+  .cta{position:relative;overflow:hidden;margin-top:15px;width:min(84%,262px);background:linear-gradient(90deg,#2F7EFF,#5B9CFF);color:#fff;
+    font-size:17px;font-weight:900;padding:15px;border-radius:15px;border:none;cursor:pointer;box-shadow:0 12px 30px rgba(47,126,255,.5);animation:ctapulse 1.5s infinite}
+  .cta::after{content:'';position:absolute;top:0;left:-70%;width:40%;height:100%;
+    background:linear-gradient(100deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.5) 50%,rgba(255,255,255,0) 100%);
+    transform:skewX(-18deg);animation:ctashine 2.6s ease-in-out infinite;animation-delay:1.8s}
+  @keyframes ctashine{0%,30%{left:-70%}68%,100%{left:130%}}
+  @keyframes ctapulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+  .cta.small{margin-top:9px;background:none;box-shadow:none;color:#7A8698;font-size:12px;font-weight:700;padding:6px;animation:none}
+  .cta.small::after{display:none}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="glowblob g1"></div><div class="glowblob g2"></div>
+
+  <div class="phone"><div class="screen" id="screen">
+
+    <div class="topbar" id="topbar">
+      <div class="brand"><svg viewBox="0 0 24 24" fill="none" stroke="#5B9CFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h9l4 4v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M9 12h6M9 16h6M9 8h2"/></svg>My Scanner</div>
+      <div class="chip">📄 Free · No signup</div>
+    </div>
+
+    <div class="trialwrap" id="trialWrap">
+      <div class="tlabel">TRY IT NOW</div>
+      <div class="ttitle" id="ttitle">Tap the document to scan it</div>
+      <div class="docwrap" id="docWrap">
+        <div class="docpaper" id="docPaper">
+          <div class="dline title"></div>
+          <div class="dline" style="width:82%"></div>
+          <div class="dline" style="width:70%"></div>
+          <div class="dline" style="width:76%"></div>
+          <div class="dline" style="width:60%"></div>
+          <div class="dline" style="width:74%"></div>
+          <div class="dline" style="width:66%"></div>
+          <div class="dline sig"><div class="sigmark"><svg viewBox="0 0 100 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 18c6-14 10-14 13 0 5-16 9-16 13 0 4-13 8-13 12 2 4-12 8-12 12-1 4-9 8-9 11 1 4-8 8-8 11 0" fill="none" stroke="#2F7EFF" stroke-width="2.4" stroke-linecap="round"/></svg></div></div>
+        </div>
+        <div class="scanline2"></div>
+        <div class="cornermark cm-tl"></div><div class="cornermark cm-tr"></div>
+        <div class="cornermark cm-bl"></div><div class="cornermark cm-br"></div>
+        <div class="checkburst" id="checkBurst"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+      </div>
+      <div class="exportrow" id="exportRow">
+        <div class="expbadge"><div class="expicon pdf">PDF</div><span>Export</span></div>
+        <div class="expbadge"><div class="expicon doc">DOC</div><span>Export</span></div>
+      </div>
+      <div class="thint" id="tHint">👆 tap the document</div>
+    </div>
+
+    <img class="hand" id="hand" alt="" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 60'><path d='M18 4c0-2 4-2 4 0v22l4-6c1-2 5 0 4 2l-2 6h6c3 0 6 2 6 6v10c0 6-4 12-12 12H22c-5 0-8-3-10-7L6 40c-1-2 2-5 4-3l4 4V4z' fill='white' stroke='%23102040' stroke-width='1.8'/></svg>">
+
+    <div id="intro">
+      <div class="iscene on" id="sc1">
+        <div id="introIcon"></div>
+        <div id="introH"><em>My Scanner</em> turns paper into a clean PDF — instantly</div>
+        <div id="introSub">Point, tap, done. Try scanning a document yourself.</div>
+        <div id="introDemo">
+          <div class="mdpaper">
+            <div class="mdline" style="top:16%;width:60%;height:5px;background:#8f8a7c"></div>
+            <div class="mdline" style="top:32%;width:74%"></div>
+            <div class="mdline" style="top:44%;width:64%"></div>
+            <div class="mdline" style="top:56%;width:70%"></div>
+            <div class="mdline" style="top:68%;width:50%"></div>
+          </div>
+          <div class="md-scan"></div>
+          <div id="introTag">✓ Scanned</div>
+        </div>
+      </div>
+      <button class="startbtn" id="startBtn">▶ Try it now</button>
+      <button class="skip" id="skipBtn">Skip ▶</button>
+    </div>
+
+    <button class="mute" id="muteBtn" title="sound">🔊</button>
+
+    <div class="endcard" id="endcard">
+      <div class="endicon" id="endIcon"></div>
+      <h2>Scan <span>anything</span> in seconds</h2>
+      <p>Documents, receipts, whiteboards, IDs — My Scanner turns any paper into a sharp PDF you can sign and share.</p>
+      <div class="featrow"><span>Auto edge detection</span><span>Sign &amp; annotate</span><span>Export to PDF/DOC</span></div>
+      <div class="stars">★★★★★ <b>4.8 · 10M+ downloads</b></div>
+      <button class="cta" id="ctaBtn">▶ Scan My First Document</button>
+      <button class="cta small" id="retryBtn">↺ Try again</button>
+    </div>
+
+  </div></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const screenEl=$('screen'), intro=$('intro'), endcard=$('endcard'), hand=$('hand'), topbar=$('topbar');
+let timers=[];
+function T(fn,ms){ const id=setTimeout(fn,ms); timers.push(id); return id; }
+function clearTimers(){ timers.forEach(clearTimeout); timers=[]; }
+
+function onTap(el,fn){
+  if(window.PointerEvent){ el.addEventListener('pointerdown',e=>{ if(e.cancelable) e.preventDefault(); fn(e); }); return; }
+  let last=0; const h=e=>{ const now=Date.now(); if(now-last<400) return; last=now;
+    if(e&&e.cancelable) e.preventDefault(); fn(e); };
+  el.addEventListener('touchstart',h,{passive:false}); el.addEventListener('click',h);
+}
+function pointAt(el,dy){ if(!el) return; const r=el.getBoundingClientRect(), s=screenEl.getBoundingClientRect();
+  const x=r.left+r.width*0.62-s.left, y=r.top+r.height*0.55-s.top+(dy||0);
+  hand.style.left=x+'px'; hand.style.top=y+'px'; hand.classList.add('show'); }
+function hidePointer(){ hand.classList.remove('show'); }
+
+/* document/PDF app icon */
+const APP_ICON=`<svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5B9CFF"/><stop offset="1" stop-color="#1550C9"/></linearGradient></defs>
+  <rect width="96" height="96" rx="22" fill="url(#cbg)"/>
+  <rect x="26" y="18" width="38" height="50" rx="4" fill="#fff"/>
+  <rect x="33" y="30" width="24" height="3.4" rx="1.7" fill="#B9C3D6"/>
+  <rect x="33" y="38" width="24" height="3.4" rx="1.7" fill="#B9C3D6"/>
+  <rect x="33" y="46" width="16" height="3.4" rx="1.7" fill="#B9C3D6"/>
+  <path d="M33 58c4-8 6-8 8 0 3-9 5-9 8 0" stroke="#5B9CFF" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <circle cx="66" cy="66" r="16" fill="#22C55E" stroke="#080b10" stroke-width="3"/>
+  <path d="M59 66l5 5 9-10" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+let scanned=false;
+function buildTrial(){
+  scanned=false;
+  const w=$('docWrap'); w.className='docwrap';
+  $('exportRow').classList.remove('show');
+  $('checkBurst').classList.remove('go');
+  $('tHint').classList.remove('hide');
+  onTap(w, tapScan);
+  T(()=>{ if(!scanned) pointAt(w); },900);
+}
+function tapScan(){ if(scanned) return; scanned=true; hidePointer();
+  const w=$('docWrap');
+  w.classList.add('scanning'); sfxScan();
+  $('tHint').classList.add('hide');
+  T(()=>{
+    w.classList.remove('scanning'); w.classList.add('scanned');
+    $('checkBurst').classList.add('go'); sfxWin();
+    T(()=>$('exportRow').classList.add('show'),250);
+  },850);
+  T(finishTrial,3300);
+}
+function finishTrial(){ hidePointer(); showEnd(); }
+
+function showEnd(){ $('trialWrap').classList.remove('on'); topbar.classList.remove('show'); hidePointer();
+  endcard.classList.add('show'); endShownAt=Date.now(); }
+let endShownAt=0;
+function endLocked(){ return Date.now()-endShownAt<800; }
+
+function startTrial(){
+  $('trialWrap').classList.add('on'); topbar.classList.add('show');
+  buildTrial();
+}
+
+let introGone=false;
+function dismissIntro(){ if(introGone) return; introGone=true;
+  clearTimers(); intro.classList.add('gone'); $('skipBtn').classList.add('hide');
+  T(()=>intro.style.display='none',520);
+  startTrial();
+}
+$('startBtn').addEventListener('click',dismissIntro);
+$('skipBtn').addEventListener('click',dismissIntro);
+$('retryBtn').addEventListener('click',()=>{ if(endLocked()) return; endcard.classList.remove('show'); clearTimers(); startTrial(); });
+$('ctaBtn').addEventListener('click',()=>{ if(endLocked()) return; $('ctaBtn').textContent='Opening… ▶'; downloadApp(); });
+function downloadApp(){ try{
+    if(typeof mraid!=='undefined'&&mraid.open){ mraid.open(); return; }
+    if(typeof ExitApi!=='undefined'&&ExitApi.exit){ ExitApi.exit(); return; }
+    if(typeof FbPlayableAd!=='undefined'){ FbPlayableAd.onCTAClick(); return; }
+  }catch(e){}
+  window.open('https://play.google.com/store/apps/details?id=YOUR.APP.PACKAGE','_blank'); }
+
+/* ---------------- SOUND ---------------- */
+let actx,master,soundOn=true,started=false;
+const OK=()=>actx&&actx.state==='running';
+function initAudio(){ if(started) return; try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return; }
+  started=true;
+  try{ const b=actx.createBuffer(1,1,22050),s=actx.createBufferSource(); s.buffer=b; s.connect(actx.destination); s.start(0);}catch(e){}
+  if(actx.resume) actx.resume().catch(()=>{});
+  master=actx.createGain(); master.connect(actx.destination);
+  master.gain.setValueAtTime(0.0001,actx.currentTime); master.gain.exponentialRampToValueAtTime(0.5,actx.currentTime+0.05); }
+function unlock(){ if(!started) initAudio(); else if(actx&&actx.state==='suspended') actx.resume().catch(()=>{}); }
+['pointerdown','touchstart','touchend','click','keydown'].forEach(ev=>window.addEventListener(ev,unlock,{passive:true}));
+function tone(f0,f1,t,dur,type,vol){ if(!OK())return; const o=actx.createOscillator(),g=actx.createGain();
+  o.type=type||'sine'; o.frequency.setValueAtTime(f0,t); o.frequency.exponentialRampToValueAtTime(Math.max(1,f1),t+dur*0.9);
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.015); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g); g.connect(master); o.start(t); o.stop(t+dur+0.03); }
+function noise(t,dur,cut,vol){ if(!OK())return; const n=Math.floor(actx.sampleRate*dur);
+  const b=actx.createBuffer(1,Math.max(1,n),actx.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
+  const s=actx.createBufferSource(); s.buffer=b; const f=actx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=cut;
+  const g=actx.createGain(); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t+dur+0.02); }
+function sfxTick(){ if(!OK())return; const t=actx.currentTime; tone(760,540,t,0.06,'triangle',0.14); }
+function sfxScan(){ if(!OK())return; const t=actx.currentTime; tone(500,900,t,0.5,'sine',0.1); noise(t,0.5,2600,0.05); }
+function sfxWin(){ if(!OK())return; const t=actx.currentTime; [523,659,784,1047].forEach((f,i)=>tone(f,f,t+i*0.08,0.32,'triangle',0.15)); }
+$('muteBtn').addEventListener('click',e=>{ e.stopPropagation(); unlock(); if(!master) return;
+  soundOn=!soundOn; master.gain.exponentialRampToValueAtTime(soundOn?0.5:0.0001,actx.currentTime+0.15);
+  $('muteBtn').textContent=soundOn?'🔊':'🔇'; });
+
+$('introIcon').innerHTML = APP_ICON;
+$('endIcon').innerHTML = APP_ICON;
+T(()=>$('introIcon').classList.add('in'),150);
+T(()=>$('introH').classList.add('in'),350);
+T(()=>$('introSub').classList.add('in'),650);
+T(()=>$('introDemo').classList.add('in'),950);
+T(()=>{ $('introDemo').classList.add('scan'); sfxTick(); },1300);
+T(()=>{ $('introDemo').classList.remove('scan'); $('introDemo').classList.add('done'); $('introTag').classList.add('show'); sfxWin(); },2150);
+T(()=>$('startBtn').classList.add('show'),2700);
+T(dismissIntro,6900);
+</script>
+</body>
+</html>
