@@ -50,6 +50,15 @@
      letterbox strips read as an intentional backdrop instead of ugly black bars */
   #hookVideoBg{position:absolute;inset:-14px;width:calc(100% + 28px);height:calc(100% + 28px);object-fit:cover;display:block;filter:blur(22px) brightness(.55);transform:scale(1.05)}
   #hookVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block}
+  /* directly-wired sound toggle — a generic window-level tap listener isn't a reliable enough
+     "user gesture" for unmuting media on some mobile WebKit builds; a dedicated on-element
+     handler is the bulletproof path. */
+  .soundPill{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:8;
+    background:rgba(8,11,16,.75);border:1px solid rgba(255,255,255,.25);color:#fff;
+    font-size:12.5px;font-weight:800;padding:8px 16px;border-radius:20px;cursor:pointer;
+    display:flex;align-items:center;gap:6px;animation:pillpulse 1.6s infinite;transition:opacity .3s}
+  .soundPill.hide{opacity:0;pointer-events:none}
+  @keyframes pillpulse{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.05)}}
   #introH{color:#fff;font-size:clamp(20px,6vw,25px);font-weight:900;line-height:1.28;opacity:0;transform:translateY(10px)}
   #introH.in{animation:textup .45s forwards}
   @keyframes textup{to{opacity:1;transform:translateY(0)}}
@@ -207,6 +216,7 @@
       <div class="iscene on" id="hookScene">
         <video id="hookVideoBg" playsinline muted autoplay preload="auto"></video>
         <video id="hookVideo" playsinline muted autoplay preload="auto"></video>
+        <button class="soundPill" id="soundPill">🔊 Tap for sound</button>
       </div>
       <div class="iscene" id="sc1">
         <div id="introH">No printer. No laptop. <em>Just tap</em> 🤯</div>
@@ -387,6 +397,7 @@ hookVideo.src = HOOK_VIDEO_SRC;
 hookVideoBg.src = HOOK_VIDEO_SRC;
 let handedOff=false;
 function afterHook(){ if(handedOff) return; handedOff=true;
+  $('soundPill').classList.add('hide');
   $('hookScene').classList.remove('on'); $('sc1').classList.add('on');
   T(()=>$('introH').classList.add('in'),100);
   T(()=>$('introSub').classList.add('in'),400);
@@ -409,6 +420,20 @@ hookVideo.play().catch(()=>{
   hookVideo.play().catch(afterHook);
 });
 hookVideoBg.play().catch(()=>{});
+
+/* Bulletproof path: a direct click handler on a real, visible button, doing the unmute and
+   the play() call synchronously inside that one gesture. This is the version that works even
+   on the strictest mobile WebKit builds where a delegated window-level tap isn't accepted as
+   a strong enough gesture for unmuting media. */
+$('soundPill').addEventListener('click', e=>{ e.stopPropagation();
+  videoUnmutedByGesture = true;
+  hookVideo.muted = false; hookVideo.volume = 1;
+  hookVideo.play().catch(()=>{});
+  $('soundPill').classList.add('hide');
+  unlock();
+});
+hookVideo.addEventListener('volumechange', ()=>{ if(!hookVideo.muted) $('soundPill').classList.add('hide'); });
+hookVideo.addEventListener('ended', ()=>$('soundPill').classList.add('hide'));
 </script>
 </body>
 </html>
